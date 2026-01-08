@@ -19,12 +19,21 @@ const HistoryList: React.FC<HistoryListProps> = ({ history, players }) => {
 
   return (
     <div className="space-y-4">
-      {history.map((round) => (
+      {history.map((round) => {
+        const winner = round.winnerId ? players.find(p => p.id === round.winnerId) : null;
+        return (
         <div key={round.id} className="bg-slate-900/30 border border-slate-800/50 p-4 rounded-2xl relative overflow-hidden">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-xs font-bold text-slate-500 tracking-widest uppercase">
-              Ván {history.length - history.indexOf(round)}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 tracking-widest uppercase">
+                Ván {history.length - history.indexOf(round)}
+              </span>
+              {winner && (
+                <span className="text-xs font-bold px-2 py-1 rounded-full bg-slate-800/50" style={{ color: winner.color }}>
+                  🏆 {winner.name}
+                </span>
+              )}
+            </div>
             <span className="text-xs text-slate-600">
               {new Date(round.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
@@ -47,7 +56,8 @@ const HistoryList: React.FC<HistoryListProps> = ({ history, players }) => {
             })}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Player } from "../types";
 
+// Hide number input spinner
+const numberInputStyles = `
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+`;
+
 interface MatchModalProps {
   players: Player[];
   onClose: () => void;
-  onSubmit: (changes: { [playerId: string]: number }) => void;
+  onSubmit: (changes: { [playerId: string]: number }, winnerId?: string) => void;
 }
 
 const MatchModal: React.FC<MatchModalProps> = ({
@@ -15,6 +27,7 @@ const MatchModal: React.FC<MatchModalProps> = ({
   const [deltas, setDeltas] = useState<{ [playerId: string]: number }>(
     players.reduce((acc, p) => ({ ...acc, [p.id]: 0 }), {})
   );
+  const [winnerId, setWinnerId] = useState<string>("");
 
   const sum = (Object.values(deltas) as number[]).reduce(
     (a: number, b: number) => a + b,
@@ -34,16 +47,26 @@ const MatchModal: React.FC<MatchModalProps> = ({
     }));
   };
 
+  const handleIncrement = (playerId: string) => {
+    handleQuickAdd(playerId, 1);
+  };
+
+  const handleDecrement = (playerId: string) => {
+    handleQuickAdd(playerId, -1);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-sm">
-      <div className="bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border-t border-slate-800 sm:border animate-in slide-in-from-bottom duration-300">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">Thêm Kết Quả Ván</h2>
-            <button onClick={onClose} className="text-slate-400 p-2">
-              <i className="fas fa-times"></i>
-            </button>
-          </div>
+    <>
+      <style>{numberInputStyles}</style>
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div className="bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border-t border-slate-800 sm:border animate-in slide-in-from-bottom duration-300">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Thêm Kết Quả Ván</h2>
+              <button onClick={onClose} className="text-slate-400 p-2">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
 
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
             {players.map((player) => {
@@ -83,7 +106,13 @@ const MatchModal: React.FC<MatchModalProps> = ({
                         </span>
                       </div>
                     </div>
-                    <div className="relative">
+                    <div className="relative flex items-center gap-1">
+                      <button
+                        onClick={() => handleDecrement(player.id)}
+                        className="border-2 border-slate-600 hover:border-rose-500 text-slate-400 hover:text-rose-400 rounded-md py-1 px-2.5 font-bold text-lg transition-all active:scale-95"
+                      >
+                        −
+                      </button>
                       <input
                         type="number"
                         inputMode="numeric"
@@ -93,12 +122,22 @@ const MatchModal: React.FC<MatchModalProps> = ({
                         onChange={(e) =>
                           handleChange(player.id, e.target.value)
                         }
-                        className="bg-slate-950 border border-slate-700 rounded-lg py-2.5 px-3 w-28 text-right font-black text-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-inner"
+                        className="bg-slate-950 border border-slate-700 rounded-lg py-1 px-3 w-20 text-center font-black text-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-inner"
+                        style={{
+                          WebkitAppearance: "textfield",
+                          MozAppearance: "textfield"
+                        }}
                       />
+                      <button
+                        onClick={() => handleIncrement(player.id)}
+                        className="border-2 border-slate-600 hover:border-emerald-500 text-slate-400 hover:text-emerald-400 rounded-md py-1 px-2.5 font-bold text-lg transition-all active:scale-95"
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    {[-3, -2, -1, 1, 2, 3].map((val) => (
+                    {[-3, -2, 2, 3].map((val) => (
                       <button
                         key={val}
                         onClick={() => handleQuickAdd(player.id, val)}
@@ -118,6 +157,39 @@ const MatchModal: React.FC<MatchModalProps> = ({
           </div>
 
           <div className="mt-6 pt-4 border-t border-slate-800 space-y-4">
+            <div className="space-y-3">
+              <span className="text-slate-400 text-sm font-medium block">
+                Người Thắng Ván:
+              </span>
+              <div className="flex gap-3">
+                {players.map((player) => (
+                  <label
+                    key={player.id}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="winner"
+                      value={player.id}
+                      checked={winnerId === player.id}
+                      onChange={(e) => setWinnerId(e.target.value)}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                    <span
+                      className="flex items-center gap-2 text-slate-200"
+                      style={{ color: winnerId === player.id ? player.color : "inherit" }}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: player.color }}
+                      ></span>
+                      {player.name}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div className="flex justify-between items-center px-2">
               <span className="text-slate-400 text-sm font-medium">
                 Tổng chênh lệch (Cần = 0):
@@ -132,8 +204,8 @@ const MatchModal: React.FC<MatchModalProps> = ({
             </div>
 
             <button
-              disabled={!isValid || Object.values(deltas).every((v) => v === 0)}
-              onClick={() => onSubmit(deltas)}
+              disabled={!isValid || Object.values(deltas).every((v) => v === 0) || !winnerId}
+              onClick={() => onSubmit(deltas, winnerId || undefined)}
               className="w-full py-4 rounded-2xl bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-500 font-bold text-lg transition-all active:scale-95 shadow-lg shadow-emerald-950/30 text-white"
             >
               LƯU KẾT QUẢ
@@ -148,7 +220,8 @@ const MatchModal: React.FC<MatchModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

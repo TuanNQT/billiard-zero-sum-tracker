@@ -15,6 +15,7 @@ export interface MatchRound {
   id: string;
   timestamp: number;
   changes: ScoreChange[];
+  winnerId?: string;
 }
 
 export interface AppState {

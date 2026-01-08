@@ -83,12 +83,13 @@ const App: React.FC = () => {
     }));
   };
 
-  const handleAddRound = (changes: { [playerId: string]: number }) => {
+  const handleAddRound = (changes: { [playerId: string]: number }, winnerId?: string) => {
     triggerHaptic();
     const round: MatchRound = {
       id: generateUUID(),
       timestamp: Date.now(),
-      changes: Object.entries(changes).map(([playerId, delta]) => ({ playerId, delta }))
+      changes: Object.entries(changes).map(([playerId, delta]) => ({ playerId, delta })),
+      winnerId
     };
 
     setState(prev => ({
