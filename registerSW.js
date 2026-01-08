@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/billiard-zero-sum-tracker/sw.js', { scope: '/billiard-zero-sum-tracker/' })})}
