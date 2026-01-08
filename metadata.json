@@ -1,0 +1,6 @@
+
+{
+  "name": "Billiard Zero-Sum Tracker",
+  "description": "A professional score tracker for billiard games where players' scores must always sum to zero to ensure accounting accuracy. Features match history and AI-powered performance commentary.",
+  "requestFramePermissions": []
+}
