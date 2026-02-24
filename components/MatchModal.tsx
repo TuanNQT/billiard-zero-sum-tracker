@@ -16,7 +16,10 @@ const numberInputStyles = `
 interface MatchModalProps {
   players: Player[];
   onClose: () => void;
-  onSubmit: (changes: { [playerId: string]: number }, winnerId?: string) => void;
+  onSubmit: (
+    changes: { [playerId: string]: number },
+    winnerId?: string,
+  ) => void;
 }
 
 const MatchModal: React.FC<MatchModalProps> = ({
@@ -25,16 +28,16 @@ const MatchModal: React.FC<MatchModalProps> = ({
   onSubmit,
 }) => {
   const [deltas, setDeltas] = useState<{ [playerId: string]: number }>(
-    players.reduce((acc, p) => ({ ...acc, [p.id]: 0 }), {})
+    players.reduce((acc, p) => ({ ...acc, [p.id]: 0 }), {}),
   );
   const [deltaTexts, setDeltaTexts] = useState<{ [playerId: string]: string }>(
-    players.reduce((acc, p) => ({ ...acc, [p.id]: "" }), {})
+    players.reduce((acc, p) => ({ ...acc, [p.id]: "" }), {}),
   );
   const [winnerId, setWinnerId] = useState<string>("");
 
   const sum = (Object.values(deltas) as number[]).reduce(
     (a: number, b: number) => a + b,
-    0
+    0,
   );
   const isValid = sum === 0;
 
@@ -48,8 +51,8 @@ const MatchModal: React.FC<MatchModalProps> = ({
       value === "" || value === "-"
         ? 0
         : Number.isFinite(parseInt(value, 10))
-        ? parseInt(value, 10)
-        : 0;
+          ? parseInt(value, 10)
+          : 0;
     setDeltas((prev) => ({ ...prev, [playerId]: num }));
   };
 
@@ -85,159 +88,166 @@ const MatchModal: React.FC<MatchModalProps> = ({
               </button>
             </div>
 
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
-            {players.map((player) => {
-              const currentPos = player.totalScore > 0;
-              const currentNeg = player.totalScore < 0;
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
+              {players.map((player) => {
+                const currentPos = player.totalScore > 0;
+                const currentNeg = player.totalScore < 0;
 
-              return (
-                <div
-                  key={player.id}
-                  className="bg-slate-800/30 p-4 rounded-xl space-y-3 border border-slate-800/50"
-                >
-                  <div className="flex justify-between items-center">
-                    <div className="flex flex-col">
-                      <span className="font-bold flex items-center gap-2 text-slate-100">
+                return (
+                  <div
+                    key={player.id}
+                    className="bg-slate-800/30 p-4 rounded-xl space-y-3 border border-slate-800/50"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex flex-col">
+                        <span className="font-bold flex items-center gap-2 text-slate-100">
+                          <span
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: player.color }}
+                          ></span>
+                          {player.name}
+                        </span>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                            Tổng:
+                          </span>
+                          <span
+                            className={`text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-950/50 ${
+                              currentPos
+                                ? "text-emerald-400"
+                                : currentNeg
+                                  ? "text-rose-400"
+                                  : "text-slate-500"
+                            }`}
+                          >
+                            {currentPos
+                              ? `+${player.totalScore}`
+                              : player.totalScore}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="relative flex items-center gap-1">
+                        <button
+                          onClick={() => handleDecrement(player.id)}
+                          className="border-2 border-slate-600 hover:border-rose-500 text-slate-400 hover:text-rose-400 rounded-md py-1 px-2.5 font-bold text-lg transition-all active:scale-95"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          pattern="-?[0-9]*"
+                          value={deltaTexts[player.id] ?? ""}
+                          placeholder="0"
+                          onChange={(e) =>
+                            handleChange(player.id, e.target.value)
+                          }
+                          className="bg-slate-950 border border-slate-700 rounded-lg py-1 px-3 w-20 text-center font-black text-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-inner"
+                          style={{
+                            WebkitAppearance: "textfield",
+                            MozAppearance: "textfield",
+                          }}
+                        />
+                        <button
+                          onClick={() => handleIncrement(player.id)}
+                          className="border-2 border-slate-600 hover:border-emerald-500 text-slate-400 hover:text-emerald-400 rounded-md py-1 px-2.5 font-bold text-lg transition-all active:scale-95"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {[-3, -2, 2, 3].map((val) => (
+                        <button
+                          key={val}
+                          onClick={() => handleQuickAdd(player.id, val)}
+                          className={`flex-1 py-1.5 text-xs font-bold rounded-lg border transition-all active:scale-95 ${
+                            val > 0
+                              ? "border-emerald-900/30 bg-emerald-900/10 text-emerald-400 active:bg-emerald-900/30"
+                              : "border-rose-900/30 bg-rose-900/10 text-rose-400 active:bg-rose-900/30"
+                          }`}
+                        >
+                          {val > 0 ? `+${val}` : val}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-800 space-y-4">
+              <div className="space-y-3">
+                <span className="text-slate-400 text-sm font-medium block">
+                  Người Thắng Ván:
+                </span>
+                <div className="flex gap-3">
+                  {players.map((player) => (
+                    <label
+                      key={player.id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="radio"
+                        name="winner"
+                        value={player.id}
+                        checked={winnerId === player.id}
+                        onChange={(e) => setWinnerId(e.target.value)}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                      <span
+                        className="flex items-center gap-2 text-slate-200"
+                        style={{
+                          color:
+                            winnerId === player.id ? player.color : "inherit",
+                        }}
+                      >
                         <span
                           className="w-2 h-2 rounded-full"
                           style={{ backgroundColor: player.color }}
                         ></span>
                         {player.name}
                       </span>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                          Tổng:
-                        </span>
-                        <span
-                          className={`text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-950/50 ${
-                            currentPos
-                              ? "text-emerald-400"
-                              : currentNeg
-                              ? "text-rose-400"
-                              : "text-slate-500"
-                          }`}
-                        >
-                          {currentPos
-                            ? `+${player.totalScore}`
-                            : player.totalScore}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="relative flex items-center gap-1">
-                      <button
-                        onClick={() => handleDecrement(player.id)}
-                        className="border-2 border-slate-600 hover:border-rose-500 text-slate-400 hover:text-rose-400 rounded-md py-1 px-2.5 font-bold text-lg transition-all active:scale-95"
-                      >
-                        −
-                      </button>
-                      <input
-                        type="text"
-                        inputMode="text"
-                        autoComplete="off"
-                        pattern="-?[0-9]*"
-                        value={deltaTexts[player.id] ?? ""}
-                        placeholder="0"
-                        onChange={(e) =>
-                          handleChange(player.id, e.target.value)
-                        }
-                        className="bg-slate-950 border border-slate-700 rounded-lg py-1 px-3 w-20 text-center font-black text-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-inner"
-                        style={{
-                          WebkitAppearance: "textfield",
-                          MozAppearance: "textfield"
-                        }}
-                      />
-                      <button
-                        onClick={() => handleIncrement(player.id)}
-                        className="border-2 border-slate-600 hover:border-emerald-500 text-slate-400 hover:text-emerald-400 rounded-md py-1 px-2.5 font-bold text-lg transition-all active:scale-95"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {[-3, -2, 2, 3].map((val) => (
-                      <button
-                        key={val}
-                        onClick={() => handleQuickAdd(player.id, val)}
-                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg border transition-all active:scale-95 ${
-                          val > 0
-                            ? "border-emerald-900/30 bg-emerald-900/10 text-emerald-400 active:bg-emerald-900/30"
-                            : "border-rose-900/30 bg-rose-900/10 text-rose-400 active:bg-rose-900/30"
-                        }`}
-                      >
-                        {val > 0 ? `+${val}` : val}
-                      </button>
-                    ))}
-                  </div>
+                    </label>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-slate-800 space-y-4">
-            <div className="space-y-3">
-              <span className="text-slate-400 text-sm font-medium block">
-                Người Thắng Ván:
-              </span>
-              <div className="flex gap-3">
-                {players.map((player) => (
-                  <label
-                    key={player.id}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="radio"
-                      name="winner"
-                      value={player.id}
-                      checked={winnerId === player.id}
-                      onChange={(e) => setWinnerId(e.target.value)}
-                      className="w-4 h-4 cursor-pointer"
-                    />
-                    <span
-                      className="flex items-center gap-2 text-slate-200"
-                      style={{ color: winnerId === player.id ? player.color : "inherit" }}
-                    >
-                      <span
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: player.color }}
-                      ></span>
-                      {player.name}
-                    </span>
-                  </label>
-                ))}
               </div>
-            </div>
 
-            <div className="flex justify-between items-center px-2">
-              <span className="text-slate-400 text-sm font-medium">
-                Tổng chênh lệch (Cần = 0):
-              </span>
-              <span
-                className={`text-xl font-black ${
-                  isValid ? "text-emerald-400" : "text-rose-500 animate-pulse"
-                }`}
+              <div className="flex justify-between items-center px-2">
+                <span className="text-slate-400 text-sm font-medium">
+                  Tổng chênh lệch (Cần = 0):
+                </span>
+                <span
+                  className={`text-xl font-black ${
+                    isValid ? "text-emerald-400" : "text-rose-500 animate-pulse"
+                  }`}
+                >
+                  {sum > 0 ? `+${sum}` : sum}
+                </span>
+              </div>
+
+              <button
+                disabled={
+                  !isValid ||
+                  Object.values(deltas).every((v) => v === 0) ||
+                  !winnerId
+                }
+                onClick={() => onSubmit(deltas, winnerId || undefined)}
+                className="w-full py-4 rounded-2xl bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-500 font-bold text-lg transition-all active:scale-95 shadow-lg shadow-emerald-950/30 text-white"
               >
-                {sum > 0 ? `+${sum}` : sum}
-              </span>
+                LƯU KẾT QUẢ
+              </button>
+
+              {!isValid && (
+                <p className="text-center text-xs text-rose-400 flex items-center justify-center gap-2 animate-bounce">
+                  <i className="fas fa-circle-exclamation"></i>
+                  Lỗi: Tổng điểm cộng lại phải bằng 0!
+                </p>
+              )}
             </div>
-
-            <button
-              disabled={!isValid || Object.values(deltas).every((v) => v === 0) || !winnerId}
-              onClick={() => onSubmit(deltas, winnerId || undefined)}
-              className="w-full py-4 rounded-2xl bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-500 font-bold text-lg transition-all active:scale-95 shadow-lg shadow-emerald-950/30 text-white"
-            >
-              LƯU KẾT QUẢ
-            </button>
-
-            {!isValid && (
-              <p className="text-center text-xs text-rose-400 flex items-center justify-center gap-2 animate-bounce">
-                <i className="fas fa-circle-exclamation"></i>
-                Lỗi: Tổng điểm cộng lại phải bằng 0!
-              </p>
-            )}
           </div>
         </div>
-      </div>
       </div>
     </>
   );
