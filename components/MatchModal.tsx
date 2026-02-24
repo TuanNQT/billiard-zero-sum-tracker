@@ -27,6 +27,9 @@ const MatchModal: React.FC<MatchModalProps> = ({
   const [deltas, setDeltas] = useState<{ [playerId: string]: number }>(
     players.reduce((acc, p) => ({ ...acc, [p.id]: 0 }), {})
   );
+  const [deltaTexts, setDeltaTexts] = useState<{ [playerId: string]: string }>(
+    players.reduce((acc, p) => ({ ...acc, [p.id]: "" }), {})
+  );
   const [winnerId, setWinnerId] = useState<string>("");
 
   const sum = (Object.values(deltas) as number[]).reduce(
@@ -36,15 +39,29 @@ const MatchModal: React.FC<MatchModalProps> = ({
   const isValid = sum === 0;
 
   const handleChange = (playerId: string, value: string) => {
-    const num = parseInt(value) || 0;
+    // Allow intermediate states like "" or "-" while typing negative numbers on mobile.
+    if (!/^-?\d*$/.test(value)) return;
+
+    setDeltaTexts((prev) => ({ ...prev, [playerId]: value }));
+
+    const num =
+      value === "" || value === "-"
+        ? 0
+        : Number.isFinite(parseInt(value, 10))
+        ? parseInt(value, 10)
+        : 0;
     setDeltas((prev) => ({ ...prev, [playerId]: num }));
   };
 
   const handleQuickAdd = (playerId: string, amount: number) => {
-    setDeltas((prev) => ({
-      ...prev,
-      [playerId]: (prev[playerId] || 0) + amount,
-    }));
+    setDeltas((prev) => {
+      const nextVal = (prev[playerId] || 0) + amount;
+      setDeltaTexts((prevTexts) => ({
+        ...prevTexts,
+        [playerId]: nextVal === 0 ? "" : String(nextVal),
+      }));
+      return { ...prev, [playerId]: nextVal };
+    });
   };
 
   const handleIncrement = (playerId: string) => {
@@ -114,10 +131,11 @@ const MatchModal: React.FC<MatchModalProps> = ({
                         −
                       </button>
                       <input
-                        type="number"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={deltas[player.id] === 0 ? "" : deltas[player.id]}
+                        type="text"
+                        inputMode="text"
+                        autoComplete="off"
+                        pattern="-?[0-9]*"
+                        value={deltaTexts[player.id] ?? ""}
                         placeholder="0"
                         onChange={(e) =>
                           handleChange(player.id, e.target.value)
