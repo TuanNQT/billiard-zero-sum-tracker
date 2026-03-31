@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Player } from "../types";
 
 // Hide number input spinner
@@ -35,11 +35,42 @@ const MatchModal: React.FC<MatchModalProps> = ({
   );
   const [winnerId, setWinnerId] = useState<string>("");
 
-  const sum = (Object.values(deltas) as number[]).reduce(
+  // --- Auto-fill logic ---
+  // Players whose input is still untouched (empty string)
+  const emptyPlayerIds = players
+    .filter((p) => deltaTexts[p.id] === "")
+    .map((p) => p.id);
+  const filledPlayerIds = players
+    .filter((p) => deltaTexts[p.id] !== "")
+    .map((p) => p.id);
+
+  // Auto-fill activates when exactly 1 player is empty and at least 1 is filled
+  const autoFillPlayerId =
+    emptyPlayerIds.length === 1 && filledPlayerIds.length >= 1
+      ? emptyPlayerIds[0]
+      : null;
+
+  const sumOfFilled = filledPlayerIds.reduce(
+    (acc, id) => acc + (deltas[id] || 0),
+    0,
+  );
+  const autoFillValue = autoFillPlayerId !== null ? -sumOfFilled : null;
+
+  // Build effective deltas (real deltas + auto-fill applied)
+  const effectiveDeltas = { ...deltas };
+  if (autoFillPlayerId !== null && autoFillValue !== null) {
+    effectiveDeltas[autoFillPlayerId] = autoFillValue;
+  }
+
+  const effectiveSum = (Object.values(effectiveDeltas) as number[]).reduce(
     (a: number, b: number) => a + b,
     0,
   );
-  const isValid = sum === 0;
+  const isValid = effectiveSum === 0;
+  const hasNonZeroDeltas = Object.values(effectiveDeltas).some(
+    (v) => v !== 0,
+  );
+  // --- End auto-fill logic ---
 
   const handleChange = (playerId: string, value: string) => {
     // Allow intermediate states like "" or "-" while typing negative numbers on mobile.
@@ -75,6 +106,21 @@ const MatchModal: React.FC<MatchModalProps> = ({
     handleQuickAdd(playerId, -1);
   };
 
+  const handleSubmit = () => {
+    const finalDeltas = { ...deltas };
+    // Apply auto-fill value for the remaining empty player
+    if (
+      autoFillPlayerId !== null &&
+      autoFillValue !== null &&
+      deltaTexts[autoFillPlayerId] === ""
+    ) {
+      finalDeltas[autoFillPlayerId] = autoFillValue;
+    }
+    onSubmit(finalDeltas, winnerId || undefined);
+  };
+
+  const formatWithSign = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+
   return (
     <>
       <style>{numberInputStyles}</style>
@@ -92,11 +138,20 @@ const MatchModal: React.FC<MatchModalProps> = ({
               {players.map((player) => {
                 const currentPos = player.totalScore > 0;
                 const currentNeg = player.totalScore < 0;
+                const isAutoFillTarget = autoFillPlayerId === player.id;
+                const showAutoFill =
+                  isAutoFillTarget &&
+                  autoFillValue !== null &&
+                  autoFillValue !== 0;
 
                 return (
                   <div
                     key={player.id}
-                    className="bg-slate-800/30 p-4 rounded-xl space-y-3 border border-slate-800/50"
+                    className={`p-4 rounded-xl space-y-3 border transition-all duration-300 ${
+                      showAutoFill
+                        ? "bg-amber-950/20 border-amber-500/40 shadow-lg shadow-amber-900/10"
+                        : "bg-slate-800/30 border-slate-800/50"
+                    }`}
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex flex-col">
@@ -133,22 +188,34 @@ const MatchModal: React.FC<MatchModalProps> = ({
                         >
                           −
                         </button>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          autoComplete="off"
-                          pattern="-?[0-9]*"
-                          value={deltaTexts[player.id] ?? ""}
-                          placeholder="0"
-                          onChange={(e) =>
-                            handleChange(player.id, e.target.value)
-                          }
-                          className="bg-slate-950 border border-slate-700 rounded-lg py-1 px-3 w-20 text-center font-black text-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-inner"
-                          style={{
-                            WebkitAppearance: "textfield",
-                            MozAppearance: "textfield",
-                          }}
-                        />
+                        <div className="relative">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="off"
+                            pattern="-?[0-9]*"
+                            value={deltaTexts[player.id] ?? ""}
+                            placeholder={showAutoFill ? "" : "0"}
+                            onChange={(e) =>
+                              handleChange(player.id, e.target.value)
+                            }
+                            className={`bg-slate-950 border rounded-lg py-1 px-3 w-20 text-center font-black text-xl focus:outline-none focus:ring-2 transition-all shadow-inner ${
+                              showAutoFill
+                                ? "border-amber-500/50 focus:ring-amber-500/50 text-white"
+                                : "border-slate-700 focus:ring-emerald-500/50 text-white"
+                            }`}
+                            style={{
+                              WebkitAppearance: "textfield",
+                              MozAppearance: "textfield",
+                            }}
+                          />
+                          {/* Auto-fill value overlay */}
+                          {showAutoFill && deltaTexts[player.id] === "" && (
+                            <span className="absolute inset-0 flex items-center justify-center text-amber-400/80 font-black text-xl pointer-events-none">
+                              {formatWithSign(autoFillValue)}
+                            </span>
+                          )}
+                        </div>
                         <button
                           onClick={() => handleIncrement(player.id)}
                           className="border-2 border-slate-600 hover:border-emerald-500 text-slate-400 hover:text-emerald-400 rounded-md py-1 px-2.5 font-bold text-lg transition-all active:scale-95"
@@ -172,6 +239,16 @@ const MatchModal: React.FC<MatchModalProps> = ({
                         </button>
                       ))}
                     </div>
+
+                    {/* Auto-fill badge */}
+                    {showAutoFill && deltaTexts[player.id] === "" && (
+                      <div className="flex items-center gap-1.5 animate-in fade-in duration-300">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                          <i className="fas fa-bolt text-[9px]"></i>
+                          Tự động khớp: {formatWithSign(autoFillValue)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -220,20 +297,25 @@ const MatchModal: React.FC<MatchModalProps> = ({
                 </span>
                 <span
                   className={`text-xl font-black ${
-                    isValid ? "text-emerald-400" : "text-rose-500 animate-pulse"
+                    isValid
+                      ? "text-emerald-400"
+                      : "text-rose-500 animate-pulse"
                   }`}
                 >
-                  {sum > 0 ? `+${sum}` : sum}
+                  {effectiveSum > 0 ? `+${effectiveSum}` : effectiveSum}
+                  {autoFillPlayerId !== null &&
+                    autoFillValue !== null &&
+                    autoFillValue !== 0 && (
+                      <span className="text-xs text-amber-400 ml-1 font-medium">
+                        ⚡
+                      </span>
+                    )}
                 </span>
               </div>
 
               <button
-                disabled={
-                  !isValid ||
-                  Object.values(deltas).every((v) => v === 0) ||
-                  !winnerId
-                }
-                onClick={() => onSubmit(deltas, winnerId || undefined)}
+                disabled={!isValid || !hasNonZeroDeltas || !winnerId}
+                onClick={handleSubmit}
                 className="w-full py-4 rounded-2xl bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-500 font-bold text-lg transition-all active:scale-95 shadow-lg shadow-emerald-950/30 text-white"
               >
                 LƯU KẾT QUẢ
@@ -243,6 +325,13 @@ const MatchModal: React.FC<MatchModalProps> = ({
                 <p className="text-center text-xs text-rose-400 flex items-center justify-center gap-2 animate-bounce">
                   <i className="fas fa-circle-exclamation"></i>
                   Lỗi: Tổng điểm cộng lại phải bằng 0!
+                </p>
+              )}
+
+              {isValid && hasNonZeroDeltas && !winnerId && (
+                <p className="text-center text-xs text-amber-400 flex items-center justify-center gap-2">
+                  <i className="fas fa-trophy"></i>
+                  Vui lòng chọn người thắng ván để lưu kết quả
                 </p>
               )}
             </div>
