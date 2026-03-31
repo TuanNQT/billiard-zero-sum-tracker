@@ -106,6 +106,15 @@ const MatchModal: React.FC<MatchModalProps> = ({
     handleQuickAdd(playerId, -1);
   };
 
+  const handleApplyAutoFill = (playerId: string) => {
+    if (autoFillValue === null) return;
+    setDeltas((prev) => ({ ...prev, [playerId]: autoFillValue }));
+    setDeltaTexts((prev) => ({
+      ...prev,
+      [playerId]: autoFillValue === 0 ? "0" : String(autoFillValue),
+    }));
+  };
+
   const handleSubmit = () => {
     const finalDeltas = { ...deltas };
     // Apply auto-fill value for the remaining empty player
@@ -240,13 +249,16 @@ const MatchModal: React.FC<MatchModalProps> = ({
                       ))}
                     </div>
 
-                    {/* Auto-fill badge */}
+                    {/* Auto-fill badge — click to apply */}
                     {showAutoFill && deltaTexts[player.id] === "" && (
                       <div className="flex items-center gap-1.5 animate-in fade-in duration-300">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                        <button
+                          onClick={() => handleApplyAutoFill(player.id)}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full cursor-pointer hover:bg-amber-500/20 hover:border-amber-500/40 active:scale-95 transition-all"
+                        >
                           <i className="fas fa-bolt text-[9px]"></i>
                           Tự động khớp: {formatWithSign(autoFillValue)}
-                        </span>
+                        </button>
                       </div>
                     )}
                   </div>
