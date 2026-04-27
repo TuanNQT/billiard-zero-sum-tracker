@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Player } from '../types';
 
 // Polyfill for crypto.randomUUID if not available
@@ -43,9 +42,8 @@ const ManagePlayersModal: React.FC<ManagePlayersModalProps> = ({ players, onClos
   const handleRemovePlayer = (id: string) => {
     const player = localPlayers.find(p => p.id === id);
     if (player && player.totalScore !== 0) {
-      if (!confirm(`Người chơi này đang có ${player.totalScore} điểm. Xóa họ sẽ làm mất cân bằng tổng điểm = 0. Bạn vẫn muốn xóa?`)) {
-        return;
-      }
+      alert('Chỉ có thể xóa người chơi khi điểm hiện tại bằng 0. Hãy reset ván hoặc cân bằng điểm trước.');
+      return;
     }
     setLocalPlayers(localPlayers.filter(p => p.id !== id));
   };

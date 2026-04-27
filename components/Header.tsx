@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 
 interface HeaderProps {
   onSoftReset: () => void;
@@ -35,31 +34,28 @@ const Header: React.FC<HeaderProps> = ({ onSoftReset, onHardReset, onManagePlaye
           </div>
         </div>
         <div className="flex items-center gap-0.5">
-          <button 
+          <button
             onClick={onManagePlayers}
             className="p-3 text-slate-400 active:text-blue-400 transition-colors"
             aria-label="Quản lý người chơi"
           >
             <i className="fas fa-users text-lg"></i>
           </button>
-          
+
           <div className="relative">
-            <button 
+            <button
               onClick={() => setShowResetMenu(!showResetMenu)}
               className={`p-3 transition-colors ${showResetMenu ? 'text-emerald-500' : 'text-slate-400 active:text-rose-400'}`}
-              aria-label="Menu Reset"
+              aria-label="Menu reset"
             >
               <i className="fas fa-rotate-right text-lg"></i>
             </button>
 
             {showResetMenu && (
               <>
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setShowResetMenu(false)}
-                ></div>
+                <div className="fixed inset-0 z-40" onClick={() => setShowResetMenu(false)}></div>
                 <div className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right">
-                  <button 
+                  <button
                     onClick={handleSoftReset}
                     className="w-full px-4 py-5 text-left text-sm font-bold text-slate-200 hover:bg-slate-800 border-b border-slate-800 flex items-center gap-3 active:bg-slate-800"
                   >
@@ -71,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({ onSoftReset, onHardReset, onManagePlaye
                       <div className="text-[10px] text-slate-500 font-normal uppercase">Xóa điểm & lịch sử</div>
                     </div>
                   </button>
-                  <button 
+                  <button
                     onClick={handleHardReset}
                     className="w-full px-4 py-5 text-left text-sm font-bold text-rose-500 hover:bg-slate-800 flex items-center gap-3 active:bg-slate-800"
                   >

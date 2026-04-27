@@ -1,6 +1,5 @@
-
-import React from 'react';
-import { AppState, Player } from '../types';
+﻿import React from 'react';
+import { AppState } from '../types';
 import TrendChart from './TrendChart';
 
 interface StatsViewProps {
@@ -19,25 +18,28 @@ const StatsView: React.FC<StatsViewProps> = ({ state }) => {
     );
   }
 
-  // Calculate some fun stats
-  const playerStats = players.map(p => {
-    const pHistory = history.map(h => h.changes.find(c => c.playerId === p.id)?.delta || 0);
-    const winCount = pHistory.filter(d => d > 0).length;
-    const lossCount = pHistory.filter(d => d < 0).length;
-    const biggestWin = Math.max(...pHistory, 0);
-    
-    // Status Logic
-    let status = "Bình thường";
-    const lastThree = [...pHistory].reverse().slice(-3);
-    const trendSum = lastThree.reduce((a, b) => a + b, 0);
-    if (trendSum > 15) status = "Đang vào form 🔥";
-    else if (trendSum < -15) status = "Vận đen đeo bám 💀";
-    else if (lastThree.every(v => v > 0) && lastThree.length >= 2) status = "Chuỗi thắng 🚀";
-    else if (p.totalScore > 20) status = "Đại gia Billiard 👑";
-    else if (p.totalScore < -20) status = "Nhà từ thiện 💸";
+  const playerStats = players.map((player) => {
+    const playerHistory = history.map((round) => round.changes.find((change) => change.playerId === player.id)?.delta || 0);
+    const winCount = playerHistory.filter((delta) => delta > 0).length;
+    const lossCount = playerHistory.filter((delta) => delta < 0).length;
+    const biggestWin = Math.max(...playerHistory, 0);
 
-    return { ...p, winCount, lossCount, biggestWin, status };
+    let status = 'Bình thường';
+    const recentRounds = playerHistory.slice(0, 3);
+    const trendSum = recentRounds.reduce((total, value) => total + value, 0);
+
+    if (trendSum > 15) status = 'Đang vào form 🔥';
+    else if (trendSum < -15) status = 'Vận đen đeo bám 💀';
+    else if (recentRounds.every((value) => value > 0) && recentRounds.length >= 2) status = 'Chuỗi thắng 🚀';
+    else if (player.totalScore > 20) status = 'Đại gia Billiard 👑';
+    else if (player.totalScore < -20) status = 'Nhà từ thiện 💸';
+
+    return { ...player, winCount, lossCount, biggestWin, status };
   });
+
+  const sortedStats = [...playerStats].sort((left, right) => right.totalScore - left.totalScore);
+  const biggestSwingPlayer = playerStats.reduce((previous, current) => (previous.biggestWin > current.biggestWin ? previous : current));
+  const scoreGap = Math.abs(sortedStats[0].totalScore - sortedStats[sortedStats.length - 1].totalScore);
 
   return (
     <div className="space-y-6 pb-10 animate-in fade-in duration-500">
@@ -45,27 +47,32 @@ const StatsView: React.FC<StatsViewProps> = ({ state }) => {
 
       <div className="grid grid-cols-1 gap-4">
         <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest px-1">Phân tích trạng thái</h3>
-        {playerStats.sort((a, b) => b.totalScore - a.totalScore).map((p, idx) => (
-          <div key={p.id} className="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl flex items-center justify-between">
+        {sortedStats.map((player, index) => (
+          <div key={player.id} className="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div 
-                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg"
-                style={{ backgroundColor: p.color + '15', color: p.color }}
-              >
-                {idx + 1}
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg" style={{ backgroundColor: player.color + '15', color: player.color }}>
+                {index + 1}
               </div>
               <div>
-                <h4 className="font-bold text-slate-100">{p.name}</h4>
-                <p className={`text-xs font-semibold ${p.status.includes('form') || p.status.includes('thắng') ? 'text-emerald-400' : p.status.includes('đen') ? 'text-rose-400' : 'text-blue-400'}`}>
-                  {p.status}
+                <h4 className="font-bold text-slate-100">{player.name}</h4>
+                <p
+                  className={`text-xs font-semibold ${
+                    player.status.includes('form') || player.status.includes('thắng')
+                      ? 'text-emerald-400'
+                      : player.status.includes('đen')
+                        ? 'text-rose-400'
+                        : 'text-blue-400'
+                  }`}
+                >
+                  {player.status}
                 </p>
               </div>
             </div>
             <div className="text-right">
               <div className="text-xs text-slate-500 mb-1">Thắng/Bại</div>
               <div className="flex gap-1 text-[10px] font-bold">
-                <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-500 rounded">{p.winCount}W</span>
-                <span className="px-1.5 py-0.5 bg-rose-500/10 text-rose-500 rounded">{p.lossCount}L</span>
+                <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-500 rounded">{player.winCount}W</span>
+                <span className="px-1.5 py-0.5 bg-rose-500/10 text-rose-500 rounded">{player.lossCount}L</span>
               </div>
             </div>
           </div>
@@ -83,16 +90,12 @@ const StatsView: React.FC<StatsViewProps> = ({ state }) => {
             <span className="font-bold text-white">{history.length}</span>
           </li>
           <li className="flex justify-between">
-            <span>Người "nổ hũ" to nhất:</span>
-            <span className="font-bold text-emerald-400">
-              {playerStats.reduce((prev, current) => (prev.biggestWin > current.biggestWin) ? prev : current).name}
-            </span>
+            <span>Người “nổ hũ” to nhất:</span>
+            <span className="font-bold text-emerald-400">{biggestSwingPlayer.name}</span>
           </li>
           <li className="flex justify-between">
             <span>Trận đấu kịch tính:</span>
-            <span className="font-bold text-white">
-              {Math.abs(playerStats[0].totalScore - playerStats[players.length-1].totalScore) < 10 ? 'Cực kỳ cân bằng' : 'Chênh lệch rõ rệt'}
-            </span>
+            <span className="font-bold text-white">{scoreGap < 10 ? 'Cực kỳ cân bằng' : 'Chênh lệch rõ rệt'}</span>
           </li>
         </ul>
       </div>

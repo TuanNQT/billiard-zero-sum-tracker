@@ -1,5 +1,4 @@
-
-import React from 'react';
+﻿import React from 'react';
 import { Player } from '../types';
 
 interface PlayerCardProps {
@@ -14,7 +13,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, rank }) => {
   return (
     <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-sm">
       <div className="flex items-center gap-4">
-        <div 
+        <div
           className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl relative"
           style={{ backgroundColor: player.color + '20', color: player.color }}
         >
@@ -32,7 +31,8 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, rank }) => {
       </div>
       <div className="text-right">
         <div className={`text-2xl font-bold ${isPositive ? 'text-emerald-400' : isNegative ? 'text-rose-400' : 'text-slate-400'}`}>
-          {isPositive && '+'}{player.totalScore}
+          {isPositive && '+'}
+          {player.totalScore}
         </div>
         <div className="text-[10px] text-slate-600 font-medium uppercase tracking-wider">Điểm tổng</div>
       </div>
